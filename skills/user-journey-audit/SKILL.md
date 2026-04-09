@@ -40,6 +40,7 @@ outputs:
   - journey_reports: Per-journey breakdown with missing steps, partial implementations, UX issues
   - backend_gaps: Validation and schema inconsistencies
   - suggested_fixes: File-level, actionable fixes with specific paths
+  - generated_journey: When using PRDs, the generated journey synthesis
   - journey_generation_notes: When using PRDs, documents assumptions made during journey synthesis
 ---
 
@@ -106,8 +107,9 @@ Extraction rules:
 When the user provides product/business requirements without explicit journeys:
 
 1. **Interpret the requirements** to understand expected user flows
-2. **Synthesize plausible user journeys** based on the requirements
-3. **Document your assumptions** clearly in the final report under "Journey Generation Notes"
+2. **Synthesize plausible user journeys** based on the requirements, and follow the same format as explicit journeys (numbered steps, required fields)
+3. **Document the synthesized journeys** write them in the same format as explicit journeys in a separate document and save the it as `synthesized-journeys.md` in the codebase root
+4. **Document your assumptions** clearly in the final report under "Journey Generation Notes"
 
 Example PRD interpretation:
 ```markdown
@@ -157,7 +159,8 @@ The agent must present the extracted (or synthesized) journeys and ask the follo
 1. Summarize the journeys found in Step 1.
 2. Present a "Requirement Table" to the user.
 3. Ask: *"Is this journey map an accurate 'Source of Truth' for your product? Please correct any missing logic or steps before I begin the codebase audit."*
- 
+4. Update the synthesized journeys: Edit the file `synthesized-journeys.md` with any changes or additions the user provides.
+
 **Threshold for Re-Entry:**
 If, during the Step 3 Scan, the agent finds code that contradicts the Step 2 agreement (e.g., a "Guest Checkout" flow that wasn't in the spec), it must **halt** and ask: *"I found a Guest Checkout implementation that wasn't in our agreed-upon journey. Should I update the specs and re-audit?"*
 
