@@ -13,7 +13,7 @@ description: |
 
   **What it does:**
   - Parses product specs (journey definitions or PRDs) to extract expected user flows
-  - Scans codebase for pages, routes, forms, API endpoints, and UX patterns
+  - Scans codebase for pages, routes, components, navigation elements, forms, API endpoints, and UX patterns
   - Maps implementation to expected journey steps
   - Generates structured report with coverage percentage, missing steps, partial implementations, UX gaps, and concrete fixes
 
@@ -27,6 +27,9 @@ triggers:
   - journey completeness check
   - spec-driven audit
   - product requirements validation
+
+parameters:
+  mandatory_clarification_threshold: 70%  # Trigger Step 2 if coverage is below this
 
 inputs:
   specs_file: Path to product specifications (markdown or JSON)
@@ -48,10 +51,11 @@ This skill performs spec-driven QA by auditing a codebase against product specif
 
 **Core Pipeline:**
 1. Parse specs → Extract user journeys (or synthesize from PRDs)
-2. Scan codebase → Identify pages, forms, APIs, UX patterns
-3. Map implementation → Match code to journey steps
-4. Detect gaps → Find missing, partial, or broken implementations
-5. Generate report → Produce structured, actionable audit output
+2. Ask user interactively about specs → Complete missing gaps or ambiguous user journeys (or synthesize from PRDs)
+3. Scan codebase → Identify pages, forms, APIs, UX patterns
+4. Map implementation → Match code to journey steps
+5. Detect gaps → Find missing, partial, or broken implementations
+6. Generate report → Produce structured, actionable audit output
 
 ---
 
@@ -129,7 +133,37 @@ Synthesized journey:
 
 ---
 
-## Step 2: Scan Codebase
+## Step 2: Mandatory Specification Validation
+
+For each journey, ask the user to clarify any missing or ambiguous details.
+
+**Condition:** This step is mandatory. The agent must pause and engage the user to "sign off" on the interpreted journey logic before Step 3 (Scanning) begins.
+
+### Goal
+To ensure the AI’s "Mental Model" of the product requirements is 100% accurate. If the AI misinterprets a requirement here, the entire codebase audit will be a "False Negative."
+
+### Interaction Requirements
+The agent must present the extracted (or synthesized) journeys and ask the following validation questions:
+1. **The "Happy Path" Check:**
+   > *"I have mapped the 'Create Listing' journey as 5 steps: [List Steps]. Does this accurately reflect the required user flow, or am I missing a critical middle step like 'Email Verification'?"*
+2. **The Field & Data Check:**
+   > *"For the 'User Profile' form, I am expecting to find these 4 fields: [List Fields]. Are there any optional or conditional fields defined in your specs that I should account for?"*
+3. **The "Logic Branch" Check:**
+   > *"If a user fails the 'Payment' step, what is the expected product behavior? Should I look for a 'Retry' flow or an 'Error Dashboard'?"*
+4. **Assumption Sign-off (Critical for PRDs):**
+   > *"Since the PRD didn't explicitly define the 'Delete' flow, I have synthesized a 3-step journey: [List Steps]. Do you accept this as the 'Definition of Done' for this feature?"*
+
+### Instructions for Agent
+1. Summarize the journeys found in Step 1.
+2. Present a "Requirement Table" to the user.
+3. Ask: *"Is this journey map an accurate 'Source of Truth' for your product? Please correct any missing logic or steps before I begin the codebase audit."*
+ 
+**Threshold for Re-Entry:**
+If, during the Step 3 Scan, the agent finds code that contradicts the Step 2 agreement (e.g., a "Guest Checkout" flow that wasn't in the spec), it must **halt** and ask: *"I found a Guest Checkout implementation that wasn't in our agreed-upon journey. Should I update the specs and re-audit?"*
+
+---
+
+## Step 3: Scan Codebase
 
 For each journey, scan the codebase to detect implementation.
 
@@ -150,12 +184,12 @@ Match journey steps to pages:
 - Step mentions "create listing" → Look for `/listings/new`, `/listings/create`
 - Step mentions "browse" → Look for index, list, browse pages
 
-#### Frontend: Navigation
-- Look for a starting point for each journey (e.g., homepage, dashboard)
-- Look for links or buttons that match expected navigation steps
-- Check for presence in nav bars, dropdowns, or side menus
+#### Frontend: User Flows
+- Look for a entry/exit points for each journey (e.g., homepage, dashboard)
+- Look for "Touchpoints" and "Call to Action (CTA)" items (links, buttons, or pages) that match expected navigation steps
+- Look for "Click Path (Clickstream)" analysis to detect user flows
+- Check for page presence in nav bars, dropdowns, or side menus
 - Look for redirects in page components that match expected flows
-- Check for dynamic routing patterns (e.g., `[id].tsx` for listing details)
 
 #### Frontend: Components in Pages
 - Look for components that are not used in the implemented pages: Grep for component usage in page files
@@ -208,14 +242,16 @@ Detect these UX elements:
 
 ---
 
-## Step 3: Map Implementation to Journey Steps
+## Step 4: Map Implementation to Journey Steps
 
 For each journey, create a mapping table:
 
 | Step | Expected | Implementation Found | Status |
 |------|----------|---------------------|--------|
 | Sign in | Auth page | `/app/auth/signin/page.tsx` found | Complete |
-| Click Add Listing | Navigation | Link/button found in nav | Complete |
+| Click Sign in | User Flows | Link/button found in home page | Complete |
+| Click Add Listing | User Flows | Link/button found in nav | Complete |
+| View App Statistics | Statistics graph seen as a custom component in Admin page | `<StatisticsGraph name="App Statistics">` not found | **Missing** |
 | Fill form: title | title field | `<input name="title">` found | Complete |
 | Fill form: price | price field | `<input name="price">` found | Complete |
 | Fill form: location | location field | NOT FOUND | **Missing** |
@@ -230,7 +266,7 @@ For each journey, create a mapping table:
 
 ---
 
-## Step 4: Calculate Coverage
+## Step 5: Calculate Coverage
 
 For each journey, calculate weighted coverage:
 
@@ -259,7 +295,7 @@ Total Coverage = Step Score + Field Score + UX Score
 
 ---
 
-## Step 5: Generate Audit Report
+## Step 6: Generate Audit Report
 
 **CRITICAL:** Always output the report in this exact markdown format:
 
