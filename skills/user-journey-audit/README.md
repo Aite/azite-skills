@@ -100,13 +100,28 @@ cp -r skills/user-journey-audit ~/.claude/skills/
 
 ## Usage
 
-### 1. With Defined Journeys
+### 1. With Explicit Journey Specs
 
 ```bash
 claude code "audit user journey using docs/specs.md"
 ```
 
-### 2. With Product Specs (Journey Generation)
+Your specs should follow this format:
+```markdown
+## Journey: Create Listing
+
+1. User navigates to create listing page
+2. Fills listing form:
+   - title
+   - price
+   - description
+3. Submits form
+4. Sees confirmation message
+```
+
+### 2. With Product/Business Requirements (PRD)
+
+If you don't have explicit journeys, provide product or business requirements:
 
 If you don’t have explicit journeys, provide product/business specs:
 
@@ -115,11 +130,22 @@ claude code "audit user journey using docs/product-spec.md"
 ```
 
 The skill will:
-- interpret product requirements
-- generate expected user journeys
-- audit implementation against them
+- Interpret product/business requirements
+- Synthesize expected user journeys
+- Document assumptions made during synthesis
+- Audit implementation against generated journeys
 
-⚠️ This is heuristic-based and may require validation.
+**Example PRD format:**
+```markdown
+## Features
+
+### Listing Management
+- Users can create listings with title, price, description
+- System must validate all required fields
+- Users receive confirmation after successful submission
+```
+
+⚠️ Journey synthesis is heuristic-based and includes documented assumptions.
 
 ### 3. Alternative Triggers
 
@@ -134,7 +160,11 @@ claude code "validate against product specs docs/product-spec.md"
 
 ## Spec Format
 
-Write your product specifications as markdown:
+The skill accepts two formats:
+
+### Format 1: Explicit User Journeys
+
+Write your user journeys directly as markdown:
 
 ```markdown
 ## Journey: Post Listing
@@ -166,6 +196,26 @@ Write your product specifications as markdown:
 - **Required fields**: Nested bullet points under steps
 - **Action types**: Automatically inferred from keywords (sign, click, fill, submit, etc.)
 
+### Format 2: Product/Business Requirements (PRD)
+
+Provide your product or business requirements in any structured markdown format:
+
+```markdown
+## Product Requirements
+
+### Core Features
+- Users can create and manage listings
+- Listings require title, price, and description
+- System validates all inputs
+- Confirmation shown after submission
+
+### User Stories
+- As a user, I want to create listings to sell items
+- As a user, I want to see confirmation when my listing is posted
+```
+
+The skill will synthesize journeys from these requirements automatically.
+
 ---
 
 ## Output Example
@@ -174,6 +224,15 @@ The skill generates a comprehensive markdown report:
 
 ```markdown
 # User Journey Audit Report
+
+## Journey Generation Notes
+
+The following journeys were synthesized from the provided product requirements.
+
+**Assumptions:**
+- "Create listing" flow assumes a dedicated form page at /listings/new
+- Validation assumed to happen on both client and server
+- Confirmation assumed to be an in-app message
 
 ## Summary
 
@@ -309,6 +368,7 @@ Note: parsing coverage from output requires custom scripting.
 ## Limitations
 
 - Heuristic-based (not 100% accurate)
+- Journey synthesis from PRDs involves assumptions (documented in output)
 - Static analysis only (does not run the app)
 - Complex or highly dynamic apps may reduce accuracy
 
