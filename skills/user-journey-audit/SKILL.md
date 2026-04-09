@@ -150,6 +150,17 @@ Match journey steps to pages:
 - Step mentions "create listing" → Look for `/listings/new`, `/listings/create`
 - Step mentions "browse" → Look for index, list, browse pages
 
+#### Frontend: Navigation
+- Look for a starting point for each journey (e.g., homepage, dashboard)
+- Look for links or buttons that match expected navigation steps
+- Check for presence in nav bars, dropdowns, or side menus
+- Look for redirects in page components that match expected flows
+- Check for dynamic routing patterns (e.g., `[id].tsx` for listing details)
+
+#### Frontend: Components in Pages
+- Look for components that are not used in the implemented pages: Grep for component usage in page files
+- Look for form components, buttons, links that match expected steps
+
 #### Frontend: Forms and Fields
 
 For each step involving form filling:
